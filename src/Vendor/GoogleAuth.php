@@ -2,9 +2,11 @@
 declare(strict_types=1);
 namespace ParagonIE\MultiFactor\Vendor;
 
+use BaconQrCode\Renderer\Image\ImagickImageBackEnd;
+use BaconQrCode\Renderer\ImageRenderer;
+use BaconQrCode\Renderer\RendererStyle\RendererStyle;
 use \BaconQrCode\Writer;
 use \ParagonIE\ConstantTime\Base32;
-use \ParagonIE\MultiFactor\FIDOU2F;
 use ParagonIE\MultiFactor\OneTime;
 use \ParagonIE\MultiFactor\OTP\{
     HOTP,
@@ -17,12 +19,6 @@ use \ParagonIE\MultiFactor\OTP\{
  */
 class GoogleAuth extends OneTime
 {
-
-    /**
-     * @var int
-     */
-    public $defaultQRCodeHeight = 384;
-
     /**
      * @var int
      */
@@ -70,7 +66,7 @@ class GoogleAuth extends OneTime
         string $issuer = '',
         string $label = '',
         int $initialCounter = 0
-    ) {
+    ): string {
         if ($this->otp instanceof TOTP) {
             $message = 'otpauth://totp/';
         } elseif ($this->otp instanceof HOTP) {
@@ -109,10 +105,11 @@ class GoogleAuth extends OneTime
     {
         // Sane default; You can dependency-inject a replacement:
         if (!$qrCodeWriter) {
-            $renderer = new \BaconQrCode\Renderer\Image\Png();
-            $renderer->setHeight($this->defaultQRCodeWidth);
-            $renderer->setWidth($this->defaultQRCodeHeight);
-            $qrCodeWriter = new \BaconQrCode\Writer($renderer);
+            $renderer = new ImageRenderer(
+                new RendererStyle($this->defaultQRCodeWidth),
+                new ImagickImageBackEnd()
+            );
+            $qrCodeWriter = new Writer($renderer);
         }
 
         return $qrCodeWriter;
